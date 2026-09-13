@@ -81,7 +81,17 @@ export default async function handler(req, res) {
   }
 
   if (!FMP_KEY) {
-    return res.status(500).json({ error: 'Server is missing VITE_FMP_API_KEY' });
+    // TEMPORARY DIAGNOSTIC: list which env var names (never values) this
+    // deployment actually sees, to find out why VITE_FMP_API_KEY isn't
+    // arriving. Remove this once the real cause is found.
+    const relevantKeys = Object.keys(process.env).filter((k) =>
+      /FMP|ANTHROPIC|VITE|VERCEL_ENV/i.test(k)
+    );
+    return res.status(500).json({
+      error: 'Server is missing VITE_FMP_API_KEY',
+      diagnostic_envKeysSeen: relevantKeys,
+      diagnostic_vercelEnv: process.env.VERCEL_ENV || null
+    });
   }
 
   const { query } = req.body || {};
