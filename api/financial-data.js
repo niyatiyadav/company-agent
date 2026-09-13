@@ -1,7 +1,7 @@
 // Vercel serverless function.
 // Runs server-side only — the FMP key never reaches the browser.
 //
-// POST /api/financial-data   body: { query: "AAPL" | "Apple" | "Reliance" }
+// POST /api/financial-data   body: { query: "AAPL" | "Apple" | "Microsoft" }
 // -> 200 { name, ticker, description, sector, industry, ceo, employees,
 //          marketPrice, marketCap, pe, dayRange, revenue, ebitda,
 //          netIncome, fiscalYear }
@@ -12,6 +12,12 @@
 // Endpoints" docs) — the stable API uses query-param symbols (?symbol=X
 // instead of /profile/X) and moved the P/E ratio out of /quote and into a
 // separate /ratios endpoint (priceToEarningsRatio).
+//
+// Coverage note: the free/Basic FMP plan only covers US-listed companies
+// (NYSE/NASDAQ/AMEX). International exchanges are paid-tier only (UK/
+// Canada on Premium, full global — including NSE/BSE-listed Indian stocks
+// like Reliance — only on the $149/mo Ultimate plan). A query for a non-US
+// company returns a 403 with a clear message rather than a raw 402 from FMP.
 
 const FMP_KEY = process.env.VITE_FMP_API_KEY;
 const BASE_URL = 'https://financialmodelingprep.com/stable';
@@ -25,6 +31,16 @@ async function fmpGet(path, params = {}) {
   const res = await fetch(url);
   if (!res.ok) {
     const body = await res.text().catch(() => '');
+    if (res.status === 402) {
+      // FMP's free/Basic plan only covers US exchanges (NYSE/NASDAQ/AMEX).
+      // UK/Canada need the Premium plan; full global coverage (incl. NSE/
+      // BSE-listed Indian stocks) needs the Ultimate plan.
+      const err = new Error(
+        "That company isn't available on the free FMP plan (only US-listed stocks are covered). Try a US ticker like AAPL or MSFT."
+      );
+      err.planRestricted = true;
+      throw err;
+    }
     throw new Error(`FMP request failed (${res.status}) for ${path}: ${body.slice(0, 300)}`);
   }
   return res.json();
@@ -124,6 +140,7 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return res.status(502).json({ error: message });
+    const status = err?.planRestricted ? 403 : 502;
+    return res.status(status).json({ error: message });
   }
 }

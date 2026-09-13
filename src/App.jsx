@@ -17,7 +17,7 @@ function App() {
       const data = await fetchCompanyData(query);
       setRawData(data);
     } catch (err) {
-      setError('Could not find that company. Try a different name or ticker.');
+      setError(err.message || 'Could not find that company. Try a different name or ticker.');
     } finally {
       setLoading(false);
     }
@@ -31,7 +31,7 @@ function App() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          placeholder="Enter a ticker or company name (e.g. AAPL, Reliance)"
+          placeholder="Enter a US ticker or company name (e.g. AAPL, Microsoft)"
         />
         <button onClick={handleSearch} disabled={loading}>
           {loading ? 'Searching...' : 'Search'}

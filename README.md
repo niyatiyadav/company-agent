@@ -82,6 +82,12 @@ not deploy anything.
 - FMP's free tier caps at 250 calls/day; `/api/financial-data` returns a
   JSON `{ error }` body with a non-2xx status if a call fails, so the UI
   can fail gracefully instead of crashing.
+- **US-listed companies only on the free plan.** FMP's free/Basic tier
+  covers NYSE/NASDAQ/AMEX; international exchanges are paid-tier only — UK
+  and Canada need the $59/mo Premium plan, and full global coverage
+  (including NSE/BSE-listed Indian companies) needs the $149/mo Ultimate
+  plan. Searching a non-US company returns a clear "not available on the
+  free plan" message rather than a confusing raw error.
 - The `VITE_` prefix on the env var name is kept only for continuity with
   the original build guide. The value is read via `process.env` inside the
   `/api` function (server-side, Node), never via `import.meta.env` in any
