@@ -17,7 +17,8 @@ async function fmpGet(path, params = {}) {
   }
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`FMP request failed (${res.status}) for ${path}`);
+    const body = await res.text().catch(() => '');
+    throw new Error(`FMP request failed (${res.status}) for ${path}: ${body.slice(0, 300)}`);
   }
   return res.json();
 }
