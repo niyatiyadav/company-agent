@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { fetchCompanyData } from './api/financialData';
-import { summarizeCompany } from './api/summarize';
 import './App.css';
 
 function App() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [summary, setSummary] = useState('');
   const [rawData, setRawData] = useState(null);
   const [error, setError] = useState('');
 
@@ -14,13 +12,10 @@ function App() {
     if (!query.trim()) return;
     setLoading(true);
     setError('');
-    setSummary('');
     setRawData(null);
     try {
       const data = await fetchCompanyData(query);
       setRawData(data);
-      const text = await summarizeCompany(data);
-      setSummary(text);
     } catch (err) {
       setError('Could not find that company. Try a different name or ticker.');
     } finally {
@@ -48,6 +43,12 @@ function App() {
       {rawData && (
         <div className="result-card">
           <h2>{rawData.name} ({rawData.ticker})</h2>
+          {(rawData.sector || rawData.industry) && (
+            <p className="subline">
+              {[rawData.sector, rawData.industry].filter(Boolean).join(' · ')}
+            </p>
+          )}
+
           <div className="metrics-grid">
             <div><strong>Market Price</strong><br />${rawData.marketPrice}</div>
             <div><strong>Market Cap</strong><br />${(rawData.marketCap / 1e9).toFixed(2)}B</div>
@@ -56,9 +57,22 @@ function App() {
             <div><strong>P/E Ratio</strong><br />{rawData.pe}</div>
             <div><strong>Sector</strong><br />{rawData.sector}</div>
           </div>
-          <div className="summary-text">
-            {summary.split('\n').map((line, i) => <p key={i}>{line}</p>)}
-          </div>
+
+          {rawData.description && (
+            <div className="summary-text">
+              <p>{rawData.description}</p>
+            </div>
+          )}
+
+          {(rawData.ceo || rawData.employees || rawData.fiscalYear) && (
+            <p className="footnote">
+              {[
+                rawData.ceo && `CEO: ${rawData.ceo}`,
+                rawData.employees && `${Number(rawData.employees).toLocaleString()} employees`,
+                rawData.fiscalYear && `FY${rawData.fiscalYear} financials`
+              ].filter(Boolean).join(' · ')}
+            </p>
+          )}
         </div>
       )}
     </div>
