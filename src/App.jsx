@@ -50,11 +50,11 @@ function App() {
           )}
 
           <div className="metrics-grid">
-            <div><strong>Market Price</strong><br />${rawData.marketPrice}</div>
+            <div><strong>Market Price</strong><br />${Number(rawData.marketPrice).toFixed(2)}</div>
             <div><strong>Market Cap</strong><br />${(rawData.marketCap / 1e9).toFixed(2)}B</div>
             <div><strong>Revenue</strong><br />${(rawData.revenue / 1e9).toFixed(2)}B</div>
             <div><strong>EBITDA</strong><br />${(rawData.ebitda / 1e9).toFixed(2)}B</div>
-            <div><strong>P/E Ratio</strong><br />{rawData.pe}</div>
+            <div><strong>P/E Ratio</strong><br />{Number(rawData.pe).toFixed(2)}</div>
             <div><strong>Sector</strong><br />{rawData.sector}</div>
           </div>
 
