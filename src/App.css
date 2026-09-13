@@ -1,0 +1,42 @@
+.app {
+  max-width: 700px;
+  margin: 40px auto;
+  font-family: -apple-system, sans-serif;
+  padding: 0 20px;
+}
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0;
+}
+.search-bar input {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+.search-bar button {
+  padding: 12px 24px;
+  background: #1a1a2e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.result-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 20px 0;
+  padding: 16px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+.error { color: #c0392b; }
