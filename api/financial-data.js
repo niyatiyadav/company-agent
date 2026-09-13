@@ -30,18 +30,31 @@ async function fmpGet(path, params = {}) {
   return res.json();
 }
 
+// Prefer the primary US listing when a name search turns up several
+// matches (foreign duplicate listings, OTC entries, etc. are often outside
+// the free plan and cause a 402 later when fetching quote/profile data).
+const PREFERRED_EXCHANGES = new Set(['NASDAQ', 'NYSE']);
+
+function pickBestMatch(results) {
+  if (!Array.isArray(results) || results.length === 0) return null;
+  return results.find((r) => PREFERRED_EXCHANGES.has(r.exchange)) || results[0];
+}
+
 async function resolveTicker(query) {
   // /search-symbol matches on ticker (e.g. "AAPL"); /search-name matches on
   // company name (e.g. "Microsoft"). Try symbol first since it's the more
-  // exact match, then fall back to name search.
-  let results = await fmpGet('/search-symbol', { query, limit: 1 });
-  if (!Array.isArray(results) || results.length === 0) {
-    results = await fmpGet('/search-name', { query, limit: 1 });
+  // exact match, then fall back to name search. Fetch a few candidates
+  // (not just 1) so we can prefer a primary NASDAQ/NYSE listing.
+  let results = await fmpGet('/search-symbol', { query, limit: 5 });
+  let match = pickBestMatch(results);
+  if (!match) {
+    results = await fmpGet('/search-name', { query, limit: 10 });
+    match = pickBestMatch(results);
   }
-  if (!Array.isArray(results) || results.length === 0) {
+  if (!match) {
     throw new Error('No matching company found');
   }
-  return results[0].symbol;
+  return match.symbol;
 }
 
 async function fetchCompanyData(ticker) {
