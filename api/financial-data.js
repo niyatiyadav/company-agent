@@ -31,7 +31,13 @@ async function fmpGet(path, params = {}) {
 }
 
 async function resolveTicker(query) {
-  const results = await fmpGet('/search-symbol', { query, limit: 1 });
+  // /search-symbol matches on ticker (e.g. "AAPL"); /search-name matches on
+  // company name (e.g. "Microsoft"). Try symbol first since it's the more
+  // exact match, then fall back to name search.
+  let results = await fmpGet('/search-symbol', { query, limit: 1 });
+  if (!Array.isArray(results) || results.length === 0) {
+    results = await fmpGet('/search-name', { query, limit: 1 });
+  }
   if (!Array.isArray(results) || results.length === 0) {
     throw new Error('No matching company found');
   }
