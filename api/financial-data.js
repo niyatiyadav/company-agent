@@ -5,9 +5,16 @@
 // -> 200 { name, ticker, description, sector, industry, ceo, employees,
 //          marketPrice, marketCap, pe, dayRange, revenue, ebitda,
 //          netIncome, fiscalYear }
+//
+// Uses FMP's current "stable" API (financialmodelingprep.com/stable/...).
+// The older /api/v3/... endpoints this was originally written against were
+// retired for accounts created after Aug 31, 2025 (see FMP's "Legacy
+// Endpoints" docs) — the stable API uses query-param symbols (?symbol=X
+// instead of /profile/X) and moved the P/E ratio out of /quote and into a
+// separate /ratios endpoint (priceToEarningsRatio).
 
 const FMP_KEY = process.env.VITE_FMP_API_KEY;
-const BASE_URL = 'https://financialmodelingprep.com/api/v3';
+const BASE_URL = 'https://financialmodelingprep.com/stable';
 
 async function fmpGet(path, params = {}) {
   const url = new URL(`${BASE_URL}${path}`);
@@ -24,7 +31,7 @@ async function fmpGet(path, params = {}) {
 }
 
 async function resolveTicker(query) {
-  const results = await fmpGet('/search', { query, limit: 1 });
+  const results = await fmpGet('/search-symbol', { query, limit: 1 });
   if (!Array.isArray(results) || results.length === 0) {
     throw new Error('No matching company found');
   }
@@ -32,14 +39,16 @@ async function resolveTicker(query) {
 }
 
 async function fetchCompanyData(ticker) {
-  const [profileRes, quoteRes, incomeRes] = await Promise.all([
-    fmpGet(`/profile/${ticker}`),
-    fmpGet(`/quote/${ticker}`),
-    fmpGet(`/income-statement/${ticker}`, { limit: 1 })
+  const [profileRes, quoteRes, ratiosRes, incomeRes] = await Promise.all([
+    fmpGet('/profile', { symbol: ticker }),
+    fmpGet('/quote', { symbol: ticker }),
+    fmpGet('/ratios', { symbol: ticker, limit: 1 }),
+    fmpGet('/income-statement', { symbol: ticker, limit: 1 })
   ]);
 
   const profile = profileRes?.[0];
   const quote = quoteRes?.[0];
+  const ratios = ratiosRes?.[0];
   const income = incomeRes?.[0];
 
   if (!profile) {
@@ -61,9 +70,9 @@ async function fetchCompanyData(ticker) {
     industry: profile?.industry,
     ceo: profile?.ceo,
     employees: profile?.fullTimeEmployees,
-    marketPrice: quote?.price,
-    marketCap: quote?.marketCap,
-    pe: quote?.pe,
+    marketPrice: quote?.price ?? profile?.price,
+    marketCap: quote?.marketCap ?? profile?.marketCap,
+    pe: ratios?.priceToEarningsRatio,
     dayRange:
       quote?.dayLow != null && quote?.dayHigh != null
         ? `${quote.dayLow} - ${quote.dayHigh}`
@@ -71,7 +80,7 @@ async function fetchCompanyData(ticker) {
     revenue: income?.revenue,
     ebitda,
     netIncome: income?.netIncome,
-    fiscalYear: income?.calendarYear
+    fiscalYear: income?.fiscalYear
   };
 }
 
